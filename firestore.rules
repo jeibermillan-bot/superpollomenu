@@ -1,0 +1,12 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /artifacts/{appId}/public/data/{document=**} {
+      // 🚨 PERMITE LA LECTURA A CUALQUIERA (para que el menú cargue) 🚨
+      allow read: if true; 
+      
+      // Permite la escritura solo si hay una sesión activa (anónima o admin).
+      allow write: if request.auth != null; 
+    }
+  }
+}
