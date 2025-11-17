@@ -724,14 +724,28 @@ const Header = () => {
     
     return (
         <header className="sticky top-0 z-40 bg-black shadow-lg">
-            <div className="max-w-4xl mx-auto p-4 flex justify-between items-center">
-                
-                <h1 className="text-4xl font-Bebas Neue text-gray-200 tracking-tight"style={{ textShadow: '4px 4px 12px yellow' }}>😁 MENÚ SUPER POLLO 📱</h1>
+            <div className="max-w-4xl mx-auto p-4 flex flex-wrap justify-between items-center">
+                <div className="flex items-center w-full justify-center sm:justify-start sm:w-auto"></div>
+                <img
+                 src={SuperPolloLogo}
+                   alt="Logo de Asadero Super Pollo"
+                    // w-24 en móvil, w-48 en pantallas medianas (md:)
+                  className="w-24 md:w-48 h-auto mx-auto my-4" 
+/>
+                <h1 
+    // text-xl en móvil, text-4xl en pantallas grandes
+    className="text-xl md:text-4xl font-Bebas Neue text-gray-200 tracking-tight" 
+    style={{ textShadow: '4px 4px 12px yellow' }}
+>😁 MENÚ SUPER POLLO 📱</h1>
                 
                 <div className="flex items-center space-x-3">
-                    <span className="text-xs text-gray-400 truncate max-w-[80px] sm:max-w-none" title={`UserID: ${userId}`}>
-                        <User size={12} className="inline-block mr-1" />{userId ? userId.substring(0, 8) + '...' : 'Cargando...'}
-                    </span>
+                    <span 
+    // Ocultar por defecto (hidden), mostrar solo en pantallas grandes (lg:block)
+    className="hidden lg:block text-xs text-gray-400 truncate max-w-[80px]" 
+    title={`UserID: ${userId}`}>
+    <User size={12} className="inline-block mr-1" />
+    {userId ? userId.substring(0, 8) + '...' : 'Cargando...'}
+</span>
                     <button onClick={toggleAdminMode} title={isAdmin ? "Salir de Modo Admin" : "Entrar en Modo Admin"} className={`p-3 rounded-full transition duration-300 ${isAdmin ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}>
                         <Lock size={20} className={isAdmin ? 'rotate-0' : 'rotate-180'} />
                     </button>
