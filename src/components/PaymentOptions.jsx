@@ -5,7 +5,7 @@ import { CreditCard, Wallet, Smartphone, Truck, Check, X } from 'lucide-react';
 // Información de contacto
 const CONTACT_INFO = {
     nequi: { number: '310 762 7575', name: 'Nequi', color: 'bg-orange-500 hover:bg-orange-600' }, // <--- ¡ACTUALIZA TU NÚMERO!
-    daviplata: { number: '320 762 7575', name: 'DaviPlata', color: 'bg-red-600 hover:bg-red-700' }, // <--- ¡ACTUALIZA TU NÚMERO!
+    daviplata: { number: '310 762 7575', name: 'DaviPlata', color: 'bg-red-600 hover:bg-red-700' }, // <--- ¡ACTUALIZA TU NÚMERO!
 };
 
 // El componente ahora recibe las props del carrito: el método seleccionado y la función para cambiarlo.
