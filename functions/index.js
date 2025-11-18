@@ -52,7 +52,7 @@ exports.notificarNuevoPedido = onDocumentCreated('orders/{orderId}', async (even
         notification: {
             title: `🚨 ¡NUEVO PEDIDO DE ${customerName}!`,
             body: `Total: $${totalFormateado} - Items: ${items.length}`,
-            sound: 'default' 
+            
         },
         data: {
             orderId: event.params.orderId,
