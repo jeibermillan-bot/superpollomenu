@@ -48,11 +48,26 @@ exports.notificarNuevoPedido = onDocumentCreated('orders/{orderId}', async (even
 
     // 3. Enviar la notificación
     try {
-        await getMessaging().sendToDevice(fcmToken, payload);
-        console.log('Notificación de pedido enviada exitosamente.');
-    } catch (error) {
-        console.error('Error al enviar la notificación:', error);
-    }
+    const message = {
+        notification: {
+            title: `🚨 ¡NUEVO PEDIDO DE ${customerName}!`,
+            body: `Total: $${totalFormateado} - Items: ${items.length}`,
+            sound: 'default' 
+        },
+        data: {
+            orderId: event.params.orderId,
+            type: 'new_order'
+        },
+        token: fcmToken // 💡 EL TOKEN AHORA VA DENTRO DEL OBJETO MESSAGE
+    };
+    
+    // Usamos send() en lugar de sendToDevice()
+    await getMessaging().send(message); 
+    console.log('Notificación de pedido enviada exitosamente.');
+    
+} catch (error) {
+    console.error('Error al enviar la notificación:', error);
+}
 
     return null;
 });
