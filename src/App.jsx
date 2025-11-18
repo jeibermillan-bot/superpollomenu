@@ -2,12 +2,13 @@ import React, { useState, createContext, useContext, useMemo, useEffect } from "
 import { ShoppingBag, Menu as MenuIcon, Truck, CheckCircle, X, Loader2, Minus, Plus, Lock, Trash2, Edit, AlertTriangle, User } from "lucide-react";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "firebase/auth";
-import { getFirestore, doc, collection, query, onSnapshot, addDoc, deleteDoc, updateDoc, setLogLevel, orderBy } from "firebase/firestore";
+import { getFirestore, doc, collection, query, onSnapshot, addDoc, deleteDoc, updateDoc, setLogLevel, orderBy, setDoc } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 import PaymentOptions from './components/PaymentOptions';
 import SuperPolloLogo from "./assets/images/logosuperpollo.png";
 import ImageZoomModal from "./components/ImageZoomModal";
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { getMessaging, getToken } from "firebase/messaging";
 
 // Contexto para el estado global del menú y el carrito
 const MenuContext = createContext();
@@ -30,7 +31,7 @@ const FIREBASE_CONFIG = {
 const app = initializeApp(FIREBASE_CONFIG);
 const analytics = getAnalytics(app);
 // PIN de Administrador para la interfaz
-const ADMIN_PIN = "1234"; 
+const ADMIN_PIN = "1820"; 
 
 export async function guardarResumenDiario(db, data) {
   try {
@@ -79,6 +80,8 @@ const Modal = ({ title, children, onClose, isOpen }) => {
     );
 };
 
+
+const ADMIN_DOC_ID = "superAdmin01";
 // ----------------------------------------------------------------------
 // PedidosProvider (Manejo del Estado Global y Firebase)
 // ----------------------------------------------------------------------
@@ -106,11 +109,40 @@ const PedidosProvider = ({ children }) => {
     const [orderNotes, setOrderNotes] = useState('');
     const [db, setDb] = useState(null); 
     const [appInstance, setAppInstance] = useState(null);
+    const [messagingInstance, setMessagingInstance] = useState(null);
     
     
     // ----------------------------------------------------------------------
     // FUNCIONES DEL MODAL DE IMAGEN (¡Ahora fuera del useMemo!)
     // ----------------------------------------------------------------------
+
+    const VAPID_KEY = "BKiVpXRgz45dhC6w8XcGqeTaBii6DHTuIJ7wCEG-uD1rqibO0VoUdRE-ZVM2DsrbOuOUjBrSOK5Axt9bDRMAb_c"
+
+    // administradores
+
+    const saveAdminToken = async (adminId, firestoreDb) => {
+        if (!messagingInstance) return;
+        try {
+            const currentToken = await getToken(messagingInstance, { vapidKey: VAPID_KEY });
+
+            if (currentToken) {
+                console.log("FCM Token Obtenido:", currentToken);
+                
+                const adminDocRef = doc(firestoreDb, "administradores", adminId);
+                
+                // setDoc crea el documento si no existe, o actualiza si existe
+                await setDoc(adminDocRef, { fcmToken: currentToken, lastUpdated: new Date().toISOString() }, { merge: true });
+                
+                console.log("Token de Admin guardado exitosamente.");
+            } else {
+                console.log('Permisos de notificación denegados por el navegador.');
+            }
+        } catch (e) {
+            console.error("Error al obtener o guardar el token FCM:", e);
+        }
+    };
+
+
     const openImageModal = (url) => {
         setImageModalUrl(url);
         setIsImageModalOpen(true);
@@ -170,7 +202,7 @@ const PedidosProvider = ({ children }) => {
         return;
     }
 
-    let app, auth, firestoreDb;
+    let app, auth, firestoreDb, messagingInstance;
     try {
         // Inicialización
         app = initializeApp(FIREBASE_CONFIG);
@@ -178,6 +210,8 @@ const PedidosProvider = ({ children }) => {
         firestoreDb = getFirestore(app); // 👈 Usaremos esta variable 'firestoreDb'
         setAppInstance(app);
         setDb(firestoreDb);
+        messagingInstance = getMessaging(app); 
+        setMessagingInstance(messagingInstance);
     } catch (e) {
         console.error("Firebase Initialization Failed:", e);
         setError("Error al inicializar Firebase. ¿Están todos los servicios habilitados?");
@@ -401,6 +435,7 @@ setOrderNotes('');
 // La función sendOrder termina aquí
 };
     
+    
     // --- 4. Lógica del Administrador (PIN) ---
 
     const handlePinSubmit = (pin) => {
@@ -408,6 +443,17 @@ setOrderNotes('');
             setIsAdmin(true);
             setShowModal(null);
             setPinInput('');
+            if (db && userId) { // Asegúrate de que userId (UID de la sesión anónima) y db existan
+            saveAdminToken(userId, db); 
+        }
+        if (db) { 
+            // Usamos el ID fijo "superAdmin01" para el documento en Firestore
+            saveAdminToken(ADMIN_DOC_ID, db); 
+            
+            console.log(`Guardando token FCM en /administradores/${ADMIN_DOC_ID}`); // Log de verificación
+        } else {
+            console.error("No se pudo guardar el token: la instancia DB no está cargada.");
+        }
         } else {
             alert("PIN incorrecto. Inténtalo de nuevo."); 
             setPinInput('');
@@ -585,7 +631,7 @@ const contextValue = useMemo(() => ({
                 >
                     Desbloquear
                 </button>
-                <p className="text-xs text-center text-gray-400 mt-2">PIN por defecto: {ADMIN_PIN}</p>
+                <p className="text-xs text-center text-gray-400 mt-2">CAMBIA TU VIDA, NO TE RINDAS!!!!: {1234}</p>
             </Modal>
             
             {/* Modal de Edición/Creación de Ítem */}
@@ -945,14 +991,14 @@ export const MenuItemCard = ({ item }) => {
                 relative 
                 
                 ${estaSeleccionado 
-                    ? 'ring-4 ring-red-500 border-2 border-green-700' // CLASES AL ESTAR ELEGIDO
+                    ? 'ring-4 ring-orange-500 border-2 border-red-700' // CLASES AL ESTAR ELEGIDO
                     : '' // Clases si no está seleccionado
                 }
             `}
         >
             {/* 🟢 Ícono de confirmación (Se muestra solo si estáSeleccionado es true) */}
             {estaSeleccionado && (
-                <div className="absolute top-2 left-2 bg-green-700 text-white rounded-full px-2 py-1 text-xs font-bold z-20">
+                <div className="absolute top-2 left-2 bg-orange-700 text-white rounded-full px-2 py-1 text-xs font-bold z-20">
                     ✔ ELEGIDO
                 </div>
             )}
@@ -1003,8 +1049,8 @@ export const MenuItemCard = ({ item }) => {
                 
                 {/* Detalles del Producto: Nombre y Descripción */}
                 <div>
-                    <h2 className="text-xl font-bold text-gray-800 mb-1">{item.name}</h2>
-                    <p className="text-gray-600 text-sm mb-3">{item.description}</p>
+                    <h2 className="text-xl font-bold text-black mb-1 normal-case">{item.name}</h2>
+                    <p className="text-gray-600 text-sm mb-3 normal-case">{item.description}</p>
                 </div>
 
                 {/* Precio y Botón de Añadir */}
