@@ -110,6 +110,7 @@ const PedidosProvider = ({ children }) => {
     const [db, setDb] = useState(null); 
     const [appInstance, setAppInstance] = useState(null);
     const [messagingInstance, setMessagingInstance] = useState(null);
+    const [customerPhone, setCustomerPhone] = useState('');
     
     
     // ----------------------------------------------------------------------
@@ -182,13 +183,13 @@ const PedidosProvider = ({ children }) => {
         // ¡DEBEN ser ELIMINADAS de aquí! Solo va la lógica de validación.
         
         // 2. Nombre y dirección deben tener al menos 3 caracteres
-        const hasRequiredInfo = customerName.trim().length > 2 && customerAddress.trim().length > 2;
+        const hasRequiredInfo = customerName.trim().length > 2 && customerAddress.trim().length > 2 && customerPhone.trim().length > 6;
         
         // 3. Debe haber un método de pago seleccionado
         const hasPaymentMethod = paymentMethod !== null && paymentMethod !== '';
     return hasItems && hasRequiredInfo && hasPaymentMethod;
 
-}, [cart, customerName, customerAddress, paymentMethod]);
+}, [cart, customerName, customerAddress, paymentMethod, customerPhone]);
 
     const menuCollectionPath = getCollectionPath('menuItems');
 
@@ -368,6 +369,7 @@ const finalMessageText =
     // --- ¡AÑADE ESTAS LÍNEAS! ---
     `👤 *Nombre:* ${customerName}\n` +
     `📍 *Dirección:* ${customerAddress}\n` +
+    `📞 *Teléfono:* ${customerPhone}\n` +
     // Solo incluye las notas si el cliente escribió algo
     (orderNotes ? `📝 *Notas:* ${orderNotes}\n` : '') + 
     `--- Resumen del Pedido ---\n` +
@@ -382,6 +384,7 @@ const finalMessageText =
 const orderData = {
     customerName: customerName,
     customerAddress: customerAddress,
+    customerPhone: customerPhone,
     orderNotes: orderNotes,
     total: total,
     paymentMethod: paymentMethod,
@@ -431,7 +434,9 @@ clearCart();
 
 setCustomerName('');
 setCustomerAddress('');
+setCustomerPhone('');
 setOrderNotes('');
+
 // La función sendOrder termina aquí
 };
     
@@ -562,6 +567,7 @@ const contextValue = useMemo(() => ({
     customerName, setCustomerName,
     customerAddress, setCustomerAddress,
     orderNotes, setOrderNotes, isOrderValid, 
+    customerPhone, setCustomerPhone,
     // ------------------------------------
 
     // Variables de Pago y Carrito
@@ -588,11 +594,13 @@ const contextValue = useMemo(() => ({
     customerName,
     customerAddress,
     orderNotes, isOrderValid,
+    customerPhone,
     
     // CRÍTICO: Los SETTERS para los campos DEBEN estar aquí.
     setCustomerName,
     setCustomerAddress,
     setOrderNotes,
+    setCustomerPhone,
     
     // Variables de Pago y Carrito
     paymentMethod, 
@@ -763,7 +771,7 @@ const Header = () => {
         // --- ¡NUEVAS PROPS AÑADIDAS! ---
         customerName, setCustomerName,
         customerAddress, setCustomerAddress,
-        orderNotes, setOrderNotes,
+        orderNotes, customerPhone, setCustomerPhone, setOrderNotes, 
         // -------------------------------
         
     } = useContext(MenuContext);
@@ -782,7 +790,7 @@ const Header = () => {
     // text-xl en móvil, text-4xl en pantallas grandes
     className="text-xl md:text-4xl font-Bebas Neue text-gray-200 tracking-tight" 
     style={{ textShadow: '4px 4px 12px yellow' }}
->😁 MENÚ SUPER POLLO 📱</h1>
+> MENÚ 🍛🍗 📱</h1>
                 
                 <div className="flex items-center space-x-3">
                     <span 
@@ -814,6 +822,8 @@ const Header = () => {
                 setCustomerName={setCustomerName}
                 customerAddress={customerAddress}
                 setCustomerAddress={setCustomerAddress}
+                customerPhone={customerPhone}
+                setCustomerPhone={setCustomerPhone}
                 orderNotes={orderNotes}
                 setOrderNotes={setOrderNotes}
                 // -----------------------------
@@ -840,6 +850,7 @@ const CartDropdown = ({
     // --- ¡NUEVAS PROPS RECIBIDAS! ---
     customerName, setCustomerName,
     customerAddress, setCustomerAddress,
+    customerPhone, setCustomerPhone,
     orderNotes, setOrderNotes
     // --------------------------------
 }) => {
@@ -903,6 +914,14 @@ const CartDropdown = ({
                                 onChange={(e) => setCustomerAddress(e.target.value)}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-gray-800"
                             />
+                            {/* Campo Teléfono */} 
+                            <input // <--- ¡NUEVA LÍNEA!
+                                type="tel" // <--- ¡NUEVA LÍNEA!
+                                placeholder="Tu Número de Teléfono" // <--- ¡NUEVA LÍNEA!
+                                value={customerPhone} // <--- ¡NUEVA LÍNEA!
+                                onChange={(e) => setCustomerPhone(e.target.value)} // <--- ¡NUEVA LÍNEA!
+                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-gray-800" // <--- ¡NUEVA LÍNEA!
+/>
                             
                             {/* Campo Observaciones */}
                             <textarea
@@ -991,14 +1010,14 @@ export const MenuItemCard = ({ item }) => {
                 relative 
                 
                 ${estaSeleccionado 
-                    ? 'ring-4 ring-orange-500 border-2 border-red-700' // CLASES AL ESTAR ELEGIDO
+                    ? 'ring-4 ring-red-500 border-2 border-red-700' // CLASES AL ESTAR ELEGIDO
                     : '' // Clases si no está seleccionado
                 }
             `}
         >
             {/* 🟢 Ícono de confirmación (Se muestra solo si estáSeleccionado es true) */}
             {estaSeleccionado && (
-                <div className="absolute top-2 left-2 bg-orange-700 text-white rounded-full px-2 py-1 text-xs font-bold z-20">
+                <div className="absolute top-2 left-2 bg-red-700 text-white rounded-full px-2 py-1 text-xs font-bold z-20">
                     ✔ ELEGIDO
                 </div>
             )}

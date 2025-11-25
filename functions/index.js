@@ -1,72 +1,75 @@
-// En functions/index.js
-
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { getMessaging } = require('firebase-admin/messaging');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 
-// Inicialización de Admin
-initializeApp(); 
+// Inicialización de Admin SDK
+initializeApp();
 
-// 🚨 ESTA ES LA SINTAXIS DE GENERACIÓN 2 🚨
+// Canal EXACTO usado en Android
+const ALARM_CHANNEL_ID = 'pedidos_urgentes';
+
+// UID donde tu app Android guarda SIEMPRE el token
+const ADMIN_UID = 'superAdmin01';
+
 exports.notificarNuevoPedido = onDocumentCreated('orders/{orderId}', async (event) => {
-    
-    // Si no hay datos, salimos
-    if (!event.data) {
+    if (!event.data) return null;
+
+    const pedido = event.data.data();
+    const { customerName, total, items } = pedido;
+
+    const db = getFirestore();
+    const adminSnap = await db.collection('administradores').doc(ADMIN_UID).get();
+
+    if (!adminSnap.exists) {
+        console.log("⚠ El documento del admin NO existe.");
         return null;
     }
 
-    const nuevoPedido = event.data.data();
-    const { customerName, total, items } = nuevoPedido;
-
-    const ADMIN_UID_PARA_TOKEN = 'superAdmin01'; 
-
-    // 1. Obtener el Token FCM del administrador
-    const db = getFirestore();
-    const adminDoc = await db.collection('administradores').doc(ADMIN_UID_PARA_TOKEN).get();
-    const fcmToken = adminDoc.data()?.fcmToken;
+    const fcmToken = adminSnap.data().fcmToken;
 
     if (!fcmToken) {
-        console.log('Token FCM no encontrado. Notificación no enviada.');
+        console.log("⚠ No existe token FCM guardado.");
         return null;
     }
 
+    console.log(`📡 Enviando notificación al token: ${fcmToken.substring(0, 12)}...`);
+
     const totalFormateado = (total / 100).toFixed(2);
-    
-    // 2. Definir el Payload
-    const payload = {
-        notification: {
-            title: `🚨 ¡NUEVO PEDIDO DE ${customerName}!`,
-            body: `Total: $${totalFormateado} - Items: ${items.length}`,
-            
-        },
+
+    const title = `🚨 NUEVO PEDIDO DE ${customerName}`;
+    const body = `Total: $${totalFormateado} - Items: ${items.length}`;
+
+    // MENSAJE FINAL A FIREBASE
+    const message = {
+        token: fcmToken,
+
         data: {
+            type: 'new_order',
             orderId: event.params.orderId,
-            type: 'new_order'
+            title: title,
+            body: body,
+            channel_id: ALARM_CHANNEL_ID
+        },
+
+        android: {
+            priority: "HIGH",
+            notification: {
+                channel_id: ALARM_CHANNEL_ID,
+                title: title,
+                body: body,
+                // TAG evita que las notificaciones se agrupen
+                tag: "pedido_" + event.params.orderId
+            }
         }
     };
 
-    // 3. Enviar la notificación
-   try {
-    const message = {
-        notification: {
-            title: `🚨 ¡NUEVO PEDIDO DE ${customerName}!`,
-            body: `Total: $${totalFormateado} - Items: ${items.length}`,
-            // ❌ ¡ESTA LÍNEA DEBE SER ELIMINADA!
-        },
-        data: {
-            orderId: event.params.orderId,
-            type: 'new_order'
-        },
-        token: fcmToken
-    };
-    
-    await getMessaging().send(message); 
-    console.log('Notificación de pedido enviada exitosamente.'); 
-    
-} catch (error) {
-    console.error('Error al enviar la notificación:', error);
-}
+    try {
+        const resp = await getMessaging().send(message);
+        console.log("✔ Notificación enviada:", resp);
+    } catch (err) {
+        console.error("❌ Error enviando notificación:", err);
+    }
 
     return null;
 });
