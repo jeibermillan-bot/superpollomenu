@@ -542,7 +542,8 @@ setOrderNotes('');
                 console.error("Error al eliminar ítem:", e);
             }
         }
-    };
+        
+};
 
     const startEdit = (item) => {
         if (!isAdmin) { promptAdminPin(); return; }
