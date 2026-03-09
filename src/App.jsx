@@ -411,7 +411,7 @@ try {
 }
     
 // 5. Enviar el pedido por WhatsApp
-const phoneNumber = "3116341263"; // <--- ¡Tu número de WhatsApp!
+const phoneNumber = "3151585830"; // <--- ¡Tu número de WhatsApp!
 const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(finalMessageText)}`;
 
 window.open(whatsappUrl, '_blank');
