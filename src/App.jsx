@@ -43,8 +43,8 @@ export async function guardarResumenDiario(db, data) {
   }
 }
 // Constantes de la App
-const PRIMARY_WHATSAPP = '573138715813'; 
-const COPY_WHATSAPP = '573116341263'; 
+const PRIMARY_WHATSAPP = '573151585830'; 
+const COPY_WHATSAPP = '573151585830'; 
 
 // Define el ID de la app.
 const appId = FIREBASE_CONFIG.projectId || 'default-app-id';
